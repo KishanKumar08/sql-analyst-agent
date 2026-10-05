@@ -1,0 +1,11 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+data/*.sqlite
+.pytest_cache/
+traces/run-*.jsonl
+*.pdf
+
+docs/
+.ruff_cache/
