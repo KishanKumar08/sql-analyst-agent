@@ -66,7 +66,7 @@ def ask(question: str, db: str, cfg: Config, quiet: bool) -> int:
 
 
 def chat(db: str, cfg: Config, quiet: bool) -> int:
-    """Follow-up questions reuse the previous conversation (stretch goal)."""
+    """Follow-up questions reuse the previous conversation."""
     llm = AzureLLM(cfg)
     history = None
     log("Ask a question (empty line or Ctrl-D to quit).")

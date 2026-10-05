@@ -16,7 +16,7 @@ class Config:
     price_cached_input: float = 0.025
     price_output: float = 2.00
 
-    # --- run budgets (R4) --------------------------------------------------
+    # --- run budgets ------------------------------------------------------
     max_turns: int = 15                    # one turn = one model call
     max_tokens: int = 200_000              # input + output, summed over the run
     max_cost_usd: float = 0.10
@@ -25,12 +25,12 @@ class Config:
     # call can still run after exploration stops.
     finalize_reserve: float = 0.15
 
-    # --- database limits (R3) ----------------------------------------------
+    # --- database limits --------------------------------------------------
     query_timeout_s: float = 5.0
     max_rows: int = 200                    # rows fetched from SQLite per query
     max_cell_chars: int = 200
 
-    # --- context management (R5) -------------------------------------------
+    # --- context management -----------------------------------------------
     rows_to_model: int = 50                # rows of a result the model actually sees
     max_tool_result_chars: int = 6000
     compact_after_tokens: int = 16_000     # prompt size that triggers compaction
