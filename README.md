@@ -250,22 +250,22 @@ The graders have their own tests ([tests/test_graders.py](tests/test_graders.py)
 
 ### Results
 
-Final run: [eval/results/results-20261005-152007.md](eval/results/results-20261005-152007.md) (every answer, grade and trace link). Model `gpt-5-mini`, effort `medium`, schema preloaded with sample rows (the defaults), 3 runs per question.
+Final run: [eval/results/results-20261005-170956.md](eval/results/results-20261005-170956.md) (every answer, grade and trace link). Model `gpt-5-mini`, effort `medium`, schema preloaded with sample rows (the defaults), 3 runs per question.
 
-**30/30 passed (100%)** · avg **$0.0028**/run · **2.2** turns · **14.0s** · total $0.08
+**30/30 passed (100%)** · avg **$0.0022**/run · **2.1** turns · **10.4s** · total $0.07
 
 | Q | Pass | Avg cost | Avg turns | Avg latency |
 |---|---|---|---|---|
-| Q1 tracks | 3/3 | $0.0006 | 2 | 4.8s |
-| Q2 genre | 3/3 | $0.0017 | 2 | 11.9s |
-| Q3 artists | 3/3 | $0.0053 | 3 | 26.0s |
-| Q4 countries | 3/3 | $0.0024 | 2 | 12.1s |
-| Q5 support agent | 3/3 | $0.0021 | 2 | 11.9s |
-| Q6 best year | 3/3 | $0.0027 | 2 | 12.5s |
-| Q7 media type | 3/3 | $0.0019 | 2 | 10.1s |
-| Q8 playlists | 3/3 | $0.0027 | 2 | 11.7s |
-| Q9 best customer | 3/3 | $0.0031 | 2.7 | 15.7s |
-| Q10 profit margin | 3/3 | $0.0053 | 2.7 | 23.2s |
+| Q1 tracks | 3/3 | $0.0007 | 2 | 4.5s |
+| Q2 genre | 3/3 | $0.0018 | 2 | 7.8s |
+| Q3 artists | 3/3 | $0.0028 | 2 | 12.3s |
+| Q4 countries | 3/3 | $0.0022 | 2 | 11.3s |
+| Q5 support agent | 3/3 | $0.0019 | 2 | 8.9s |
+| Q6 best year | 3/3 | $0.0030 | 2.7 | 13.5s |
+| Q7 media type | 3/3 | $0.0020 | 2 | 9.4s |
+| Q8 playlists | 3/3 | $0.0029 | 2 | 13.2s |
+| Q9 best customer | 3/3 | $0.0032 | 3 | 15.3s |
+| Q10 profit margin | 3/3 | $0.0019 | 1 | 8.1s |
 
 **How it got here.** Every eval run is kept in `eval/results/`:
 
@@ -276,13 +276,14 @@ Final run: [eval/results/results-20261005-152007.md](eval/results/results-202610
 | v3 | prompt fixes, turn reminder | 29/30 | $0.0028 | 4.9 | 12.7s | **0** | 0 |
 | v4 | v3 at effort medium | 30/30 | $0.0043 | 4.4 | 18.0s | 0 | 0 |
 | v5 | schema preloaded in the system prompt | 28/30 | $0.0024 | 2.1 | 11.8s | 0 | 0 |
-| v6 | v5 + 2 sample rows per table (**final**) | **30/30** | **$0.0028** | **2.2** | **14.0s** | 2 | 0 |
+| v6 | v5 + 2 sample rows per table | 30/30 | $0.0028 | 2.2 | 14.0s | 2 | 0 |
+| v7 | non-data messages handled (fix #14) (**final**) | **30/30** | **$0.0022** | **2.1** | **10.4s** | 3 | 0 |
 
 Read 100% with care:
 - These are 10 questions I studied closely, on the database I developed against. It's a regression suite, not a measure of how the agent does on new questions.
 - v1 also scored 30/30, but its traces showed real problems the pass rate hid: wasted turns, 11 tool errors, SQL pasted into answers, and an email address included that nobody asked for.
 
-Total API spend across all development and evals: $0.70 (summed from every trace).
+Total API spend across all development and evals: $0.78 (summed from every trace).
 
 ---
 
@@ -309,6 +310,7 @@ Total API spend across all development and evals: $0.70 (summed from every trace
 | 11 | Q6/Q7 hit the 15-turn limit after finding the answer at turn 4 ([trace](traces/samples/05-LIMIT-q6-reverification-loop-v2.jsonl)) | my "sanity-check results" instruction plus low effort meant endless re-verification (the same yearly totals, one year per query) | prompt: at most 1–2 targeted checks, never re-run a result you already have; harness: turn reminder at 60%. The forced final answer still produced correct output in both runs |
 | 12 | Q10 at effort low: "0% margin for every genre" with `answerable: true` ([trace](traces/samples/03-FAILED-q10-proxy-cost-low-effort.jsonl)) | the sale price was used as a stand-in for cost | a general rule in the `answerable` description helped but didn't fix it. **Effort medium did (5/5)** → default changed |
 | 13 | Forced final answer at a limit set `answerable: false` "because I could not run the query" ([trace](traces/samples/04-LIMIT-max-turns-forced-answer.jsonl) shows the behaviour before the fix) | the model mixed up "didn't finish" with "the data can't answer this" | the final-answer prompt says running out of turns doesn't make a question unanswerable; status/stop_reason already record that |
+| 14 | Typing "Hi" in `agent chat` → 6 turns, $0.0064, and an unrequested "database inventory" ("since you asked me to proceed") | there was no path for non-data messages: the model replied with text, and the nudge said "otherwise continue investigating", which it read as the user asking it to go on | system prompt: greetings, small talk and off-topic messages → `submit_answer` straight away with `answerable: false` and a short "here's what I can answer" reply; the nudge is marked as coming from the harness and offers the same option. "Hi" now takes **1 turn, $0.0012**; the full eval was re-run (v7) to check nothing regressed. Side effect: Q10 now answers in 1 turn straight from the preloaded schema (it names the tables it checked for cost columns) |
 
 ---
 
@@ -325,7 +327,7 @@ In [traces/samples/](traces/samples/). View any with `uv run agent trace <file>`
 | `05-LIMIT-q6-reverification-loop-v2.jsonl` | **Limit:** the re-verification loop (#11) hits 15 turns; the forced final answer is still correct |
 | `06-other-database-saas.jsonl` | Unseen database: uses a window function for "current plan", excludes cancellations, converts cents, states the per-seat assumption |
 
-The full trace set for the final eval is in `traces/eval-20261005-152007/`. Traces from every earlier eval run are committed too (`traces/eval-*/`), so every trace link in `eval/results/*.md` works.
+The full trace set for the final eval is in `traces/eval-20261005-170956/`. Traces from every earlier eval run are committed too (`traces/eval-*/`), so every trace link in `eval/results/*.md` works.
 
 ## Known limitations
 - **Q10-style "proxy" mistakes still happen at effort low**, and nothing in code detects them. The prompt and the `answerable` description reduce them; the only reliable fix I found was more reasoning.
